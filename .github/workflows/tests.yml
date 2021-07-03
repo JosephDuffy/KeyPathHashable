@@ -8,21 +8,37 @@ on:
 
 jobs:
   swiftpm_tests:
-    name: SwiftPM on Xcode ${{ matrix.xcode }}
-    runs-on: macos-latest
+    name: ${{ matrix.platform }} Tests with Swift ${{ matrix.swift }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        xcode:
-          - "11.7"
-          - "12.4"
+        swift:
+          - ~5.2
+          - ~5.3
+          - ~5.4
+          - ~5.5
+        platform:
+          - macOS
+          - watchOS
+          - tvOS
+          - iOS
+        os:
+          - macos-11
+        include:
+          - swift: ~5.2
+            os: macos-10.15
+          - swift: ~5.3
+            os: macos-10.15
+
     steps:
       - uses: actions/checkout@v2
 
-      - name: Select Xcode ${{ matrix.xcode }}
-        run: sudo xcode-select --switch /Applications/Xcode_${{ matrix.xcode }}.app
-
-      - name: SwiftPM tests
-        run: swift test --enable-code-coverage
+      - uses: mxcl/xcodebuild@v1
+        with:
+          swift: ${{ matrix.swift }}
+          platform: ${{ matrix.platform }}
+          code-coverage: true
 
       - name: Convert coverage to lcov
         run: xcrun llvm-cov export -format="lcov" .build/debug/HashableByKeyPathPackageTests.xctest/Contents/MacOS/HashableByKeyPathPackageTests -instr-profile .build/debug/codecov/default.profdata > coverage.lcov
@@ -41,7 +57,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        swift: ["5.2", "5.3"]
+        swift: ["5.2", "5.3", "5.4"]
 
     steps:
       - uses: actions/checkout@v1
